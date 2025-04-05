@@ -1,14 +1,25 @@
-# 👤 Pathos - Real-time Face Recognition and Emotion Classification  
+# Pathos – Real-time Face Recognition and Emotion Classification
 
-![React](https://img.shields.io/badge/Frontend-React.js-blue?logo=react)  
-![Python](https://img.shields.io/badge/Backend-Python-blue?logo=python)  
-![Flask](https://img.shields.io/badge/Backend-Flask-green?logo=flask)  
-![DeepFace](https://img.shields.io/badge/AI-DeepFace-orange)  
-![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-blue?logo=googlechrome)
+![React.js](https://img.shields.io/badge/React.js-61DAFB?logo=react&logoColor=white&style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white&style=for-the-badge)
+![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white&style=for-the-badge)
+![DeepFace](https://img.shields.io/badge/DeepFace-F28500?style=for-the-badge)
+![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-4285F4?logo=googlechrome&logoColor=white&style=for-the-badge)
 
-## 📌 What it Does  
+## About
 
-**Pathos** is a **face recognition and emotion classification** tool that identifies faces on the screen using the **DeepFace** framework. Leveraging **state-of-the-art models** such as **VGG-Face, FaceNet, OpenFace, DeepID, ArcFace, Dlib, SFace, and GhostFaceNet**, Pathos can detect faces, segment the screen, and classify facial expressions into the following emotional categories:  
+**Pathos** is a real-time face recognition and emotion classification tool that detects faces on the screen using the **DeepFace** framework. It supports state-of-the-art facial recognition models such as:
+
+- VGG-Face  
+- FaceNet  
+- OpenFace  
+- DeepID  
+- ArcFace  
+- Dlib  
+- SFace  
+- GhostFaceNet
+
+The tool classifies detected facial expressions into the following emotion categories:
 
 - Happy  
 - Sad  
@@ -16,46 +27,43 @@
 - Fear  
 - Surprise  
 - Disgust  
-- Neutral  
+- Neutral
 
-## 🚀 How We Built It  
+## Features
 
-### Frontend Technologies:  
+- **Face Recognition**: Detects faces on-screen using advanced models  
+- **Emotion Classification**: Identifies 7 core emotions in real time  
+- **Screen Capture**: Uses Chrome APIs to analyze tab content  
+- **Canvas Overlay**: Visualizes detection on screen  
+- **Chrome Extension UI**: Interactive popup with real-time control  
+- **Python Backend**: Handles image decoding, emotion recognition, and response handling
 
-- **ReactJS:** For building the UI components.  
-- **JavaScript (Vanilla/Native):** For core logic and interaction.  
-- **HTML5/CSS3:** For structuring and styling the application.  
-- **Chrome Extension APIs:**  
-    - `chrome.runtime` for message passing  
-    - `chrome.tabs` for tab management  
-    - `chrome.desktopCapture` for screen capture  
-    - `MediaDevices API` for stream handling  
+## Technology Stack
 
-### Backend Technologies:  
+### Frontend
+- React.js  
+- JavaScript (Vanilla)  
+- HTML5 / CSS3  
+- Chrome Extension APIs  
+- Canvas API  
+- RequestAnimationFrame for smooth rendering
 
-- **Flask:** Lightweight Python web framework for API communication.  
-- **DeepFace:** Face recognition and emotion analysis framework.  
-- **cv2 (OpenCV):** Image and video processing.  
-- **NumPy:** Numerical operations and array management.
+### Backend
+- Python  
+- Flask  
+- DeepFace  
+- OpenCV (cv2)  
+- NumPy
 
-### Key Chrome Extension Components:  
+### Chrome Extension Architecture
+- Manifest V3  
+- Background service worker  
+- Content scripts  
+- Popup interface  
+- Message passing (runtime & tabs API)
 
-- **Manifest V3:** Latest Chrome extension architecture.  
-- **Background Service Worker:** Handles background tasks for the extension.  
-- **Content Scripts:** Interact with web pages for face detection.  
-- **Popup Interface:** User interface for interaction with the extension.  
-- **Cross-script Communication:** Efficient communication between background scripts, content scripts, and popup interface.
+## Integration
 
-## 🚀 Features/APIs  
-
-- **Screen Capture API:** Capture the screen for face detection.  
-- **Canvas API:** For real-time drawing and display of face recognition results.  
-- **RequestAnimationFrame:** Ensures smooth frame processing during screen capture.  
-- **Async/Await:** Handles asynchronous operations for seamless user experience.  
-
-## 🔗 Integration  
-
-- **Real-time communication with Python backend:** Pathos exchanges data with the Flask backend for processing.  
-- **Base64 Image Encoding/Processing:** Used for transferring images between the frontend and backend.  
-- **JSON for Data Exchange:** Efficient data exchange for face detection results and emotions.
-
+- **Image Transfer**: Captured screen frames are encoded in Base64 and sent to Flask backend  
+- **Real-time Classification**: Backend returns emotion classification as JSON  
+- **Asynchronous Data Flow**: Uses `async/await` and event-driven updates for responsiveness  
