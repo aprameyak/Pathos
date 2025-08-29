@@ -1,6 +1,28 @@
 // Pathos V2 - Client-Side Emotion Recognition
 // No backend required - everything runs in the browser!
 
+// Dynamically load required libraries
+async function loadLibraries() {
+  return new Promise((resolve, reject) => {
+    // Load TensorFlow.js
+    const tfScript = document.createElement('script');
+    tfScript.src = chrome.runtime.getURL('libs/tensorflow.min.js');
+    tfScript.onload = () => {
+      // Load face-api.js after TensorFlow.js
+      const faceApiScript = document.createElement('script');
+      faceApiScript.src = chrome.runtime.getURL('libs/face-api.min.js');
+      faceApiScript.onload = () => {
+        console.log('Pathos V2: Libraries loaded successfully');
+        resolve();
+      };
+      faceApiScript.onerror = reject;
+      document.head.appendChild(faceApiScript);
+    };
+    tfScript.onerror = reject;
+    document.head.appendChild(tfScript);
+  });
+}
+
 class PathosEmotionDetector {
   constructor() {
     this.isRunning = false;
@@ -29,6 +51,9 @@ class PathosEmotionDetector {
   async init() {
     try {
       console.log('Pathos V2: Initializing...');
+      
+      // Load libraries first
+      await loadLibraries();
       
       // Wait for face-api to be available
       if (typeof faceapi === 'undefined') {
