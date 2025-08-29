@@ -35,6 +35,12 @@ class PathosPopup {
         return;
       }
 
+      // Check if content script can run on this tab
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+        this.updateUI('error', 'Not available on this page');
+        return;
+      }
+
       // Send message to content script
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getStatus' });
       
@@ -57,7 +63,12 @@ class PathosPopup {
       }
     } catch (error) {
       console.error('Status update error:', error);
-      this.updateUI('error', 'Extension not ready');
+      // Check if it's a connection error (content script not running)
+      if (error.message.includes('Receiving end does not exist')) {
+        this.updateUI('error', 'Navigate to a web page');
+      } else {
+        this.updateUI('error', 'Extension not ready');
+      }
     }
   }
 
@@ -101,6 +112,11 @@ class PathosPopup {
         throw new Error('No active tab found');
       }
 
+      // Check if content script can run on this tab
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+        throw new Error('Not available on this page');
+      }
+
       // Send start message to content script
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'startDetection' });
       
@@ -112,7 +128,13 @@ class PathosPopup {
       }
     } catch (error) {
       console.error('Start detection error:', error);
-      this.updateUI('error', 'Failed to start');
+      if (error.message.includes('Receiving end does not exist')) {
+        this.updateUI('error', 'Navigate to a web page');
+      } else if (error.message.includes('Not available on this page')) {
+        this.updateUI('error', 'Not available on this page');
+      } else {
+        this.updateUI('error', 'Failed to start');
+      }
       this.startBtn.disabled = false;
     }
   }
@@ -129,6 +151,11 @@ class PathosPopup {
         throw new Error('No active tab found');
       }
 
+      // Check if content script can run on this tab
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+        throw new Error('Not available on this page');
+      }
+
       // Send stop message to content script
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'stopDetection' });
       
@@ -140,7 +167,13 @@ class PathosPopup {
       }
     } catch (error) {
       console.error('Stop detection error:', error);
-      this.updateUI('error', 'Failed to stop');
+      if (error.message.includes('Receiving end does not exist')) {
+        this.updateUI('error', 'Navigate to a web page');
+      } else if (error.message.includes('Not available on this page')) {
+        this.updateUI('error', 'Not available on this page');
+      } else {
+        this.updateUI('error', 'Failed to stop');
+      }
       this.stopBtn.disabled = false;
     }
   }
