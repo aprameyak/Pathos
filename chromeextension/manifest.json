@@ -1,20 +1,33 @@
 {
   "manifest_version": 3,
-  "name": "Pathos",
-  "version": "1.0",
-  "description": "Detects emotions in screen captures",
+  "name": "Pathos - Emotion Recognition",
+  "version": "1.0.0",
+  "description": "Real-time face recognition and emotion classification using DeepFace",
   "permissions": [
     "activeTab",
-    "desktopCapture",
+    "scripting",
     "storage"
   ],
   "host_permissions": [
-    "http://localhost:5001/*"
+    "https://your-backend-url.onrender.com/*"
   ],
-  "action": {
-    "default_popup": "popup.html"
-  },
   "background": {
     "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Pathos Emotion Recognition"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
 }
