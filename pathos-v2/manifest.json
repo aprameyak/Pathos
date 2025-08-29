@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Pathos V2 - Emotion Recognition",
+  "version": "2.0.0",
+  "description": "Real-time emotion recognition using client-side AI - No backend required!",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "libs/tensorflow.min.js",
+        "libs/face-api.min.js",
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Pathos V2 - Start Emotion Detection"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "models/*",
+        "libs/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

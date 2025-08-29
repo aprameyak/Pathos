@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathos V2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 320px;
+            min-height: 400px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .status {
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.running {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.stopped {
+            background: #f44336;
+        }
+
+        .status-indicator.loading {
+            background: #ff9800;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .controls {
+            padding: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 20px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .features {
+            padding: 0 20px 20px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .feature-icon {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">😊 Pathos V2</div>
+        <div class="subtitle">Client-Side Emotion Recognition</div>
+    </div>
+
+    <div class="status">
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="statusText">Initializing...</span>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="startBtn" disabled>
+            🚀 Start Detection
+        </button>
+        <button class="btn btn-secondary" id="stopBtn" disabled>
+            ⏹️ Stop Detection
+        </button>
+    </div>
+
+    <div class="info">
+        <strong>How it works:</strong><br>
+        1. Click "Start Detection"<br>
+        2. Select a window/screen to capture<br>
+        3. See real-time emotion analysis!
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <span class="feature-icon">⚡</span>
+            <span>100% Client-Side (No Backend)</span>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">🔒</span>
+            <span>Privacy-First (Data Stays Local)</span>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">🚀</span>
+            <span>Lightning Fast Processing</span>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">💯</span>
+            <span>Completely Free Forever</span>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
