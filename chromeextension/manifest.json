@@ -9,7 +9,7 @@
     "storage"
   ],
   "host_permissions": [
-    "https://your-backend-url.onrender.com/*"
+    "https://your-railway-url.up.railway.app/*"
   ],
   "background": {
     "service_worker": "background.js"

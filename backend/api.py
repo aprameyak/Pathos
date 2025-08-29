@@ -6,9 +6,15 @@ from deepface import DeepFace
 import cv2
 import numpy as np
 from base64 import b64decode
+import os
 
 app = Flask(__name__)
 CORS(app)
+
+# Health check endpoint
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy', 'service': 'pathos-emotion-api'})
 
 @app.route('/analyze_screen', methods=['POST', 'OPTIONS'])
 def analyze_screen_emotion():
@@ -37,6 +43,15 @@ def analyze_screen_emotion():
 
         if frame is None:
             return jsonify({'error': 'Invalid image data'}), 400
+
+        # Resize image to reduce processing time (optional optimization)
+        max_size = 640
+        height, width = frame.shape[:2]
+        if max(height, width) > max_size:
+            scale = max_size / max(height, width)
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            frame = cv2.resize(frame, (new_width, new_height))
 
         
         results = DeepFace.analyze(
@@ -118,5 +133,6 @@ def analyze_screen_emotion():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
 
