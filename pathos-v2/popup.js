@@ -41,13 +41,16 @@ class PathosPopup {
       if (response) {
         this.isRunning = response.isRunning;
         this.modelsLoaded = response.modelsLoaded;
+        this.initialized = response.initialized;
         
         if (this.isRunning) {
           this.updateUI('running', 'Detection Active');
-        } else if (this.modelsLoaded) {
+        } else if (this.initialized && this.modelsLoaded) {
           this.updateUI('stopped', 'Ready to Start');
-        } else {
+        } else if (this.initialized) {
           this.updateUI('loading', 'Loading Models...');
+        } else {
+          this.updateUI('loading', 'Initializing...');
         }
       } else {
         this.updateUI('error', 'Extension not ready');

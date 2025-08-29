@@ -10,6 +10,7 @@ class PathosEmotionDetector {
     this.ctx = null;
     this.animationFrame = null;
     this.modelsLoaded = false;
+    this.initialized = false;
     
     // Emotion colors
     this.emotionColors = {
@@ -27,21 +28,44 @@ class PathosEmotionDetector {
 
   async init() {
     try {
+      console.log('Pathos V2: Initializing...');
+      
+      // Wait for face-api to be available
+      if (typeof faceapi === 'undefined') {
+        console.log('Pathos V2: Waiting for face-api.js to load...');
+        await this.waitForFaceAPI();
+      }
+      
       // Load face-api.js models
       await this.loadModels();
       
       // Create canvas overlay
       this.createCanvas();
       
-      console.log('Pathos V2 initialized successfully!');
+      this.initialized = true;
+      console.log('Pathos V2: Initialized successfully!');
     } catch (error) {
-      console.error('Initialization error:', error);
+      console.error('Pathos V2: Initialization error:', error);
+      this.initialized = false;
     }
+  }
+
+  async waitForFaceAPI() {
+    return new Promise((resolve) => {
+      const checkFaceAPI = () => {
+        if (typeof faceapi !== 'undefined') {
+          resolve();
+        } else {
+          setTimeout(checkFaceAPI, 100);
+        }
+      };
+      checkFaceAPI();
+    });
   }
 
   async loadModels() {
     try {
-      console.log('Loading face-api.js models...');
+      console.log('Pathos V2: Loading face-api.js models...');
       
       // Load face detection and landmark models
       await Promise.all([
@@ -51,9 +75,9 @@ class PathosEmotionDetector {
       ]);
       
       this.modelsLoaded = true;
-      console.log('Models loaded successfully!');
+      console.log('Pathos V2: Models loaded successfully!');
     } catch (error) {
-      console.error('Model loading error:', error);
+      console.error('Pathos V2: Model loading error:', error);
       throw error;
     }
   }
@@ -79,8 +103,13 @@ class PathosEmotionDetector {
   async startDetection() {
     if (this.isRunning) return;
     
+    if (!this.initialized || !this.modelsLoaded) {
+      console.log('Pathos V2: Still initializing, please wait...');
+      return;
+    }
+    
     try {
-      console.log('Starting emotion detection...');
+      console.log('Pathos V2: Starting emotion detection...');
       
       // Get screen capture
       this.stream = await navigator.mediaDevices.getDisplayMedia({
@@ -114,10 +143,10 @@ class PathosEmotionDetector {
         this.stopDetection();
       };
       
-      console.log('Emotion detection started!');
+      console.log('Pathos V2: Emotion detection started!');
       
     } catch (error) {
-      console.error('Start detection error:', error);
+      console.error('Pathos V2: Start detection error:', error);
       this.stopDetection();
     }
   }
@@ -143,7 +172,7 @@ class PathosEmotionDetector {
       this.drawDetections(detections);
       
     } catch (error) {
-      console.error('Frame processing error:', error);
+      console.error('Pathos V2: Frame processing error:', error);
     }
     
     // Continue processing
@@ -197,7 +226,7 @@ class PathosEmotionDetector {
   }
 
   stopDetection() {
-    console.log('Stopping emotion detection...');
+    console.log('Pathos V2: Stopping emotion detection...');
     
     this.isRunning = false;
     
@@ -220,7 +249,7 @@ class PathosEmotionDetector {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
-    console.log('Emotion detection stopped!');
+    console.log('Pathos V2: Emotion detection stopped!');
   }
 }
 
@@ -229,6 +258,8 @@ let emotionDetector = null;
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Pathos V2: Received message:', request);
+  
   if (request.action === 'startDetection') {
     if (!emotionDetector) {
       emotionDetector = new PathosEmotionDetector();
@@ -243,9 +274,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === 'getStatus') {
     sendResponse({ 
       isRunning: emotionDetector ? emotionDetector.isRunning : false,
-      modelsLoaded: emotionDetector ? emotionDetector.modelsLoaded : false
+      modelsLoaded: emotionDetector ? emotionDetector.modelsLoaded : false,
+      initialized: emotionDetector ? emotionDetector.initialized : false
     });
   }
 });
 
-console.log('Pathos V2 content script loaded!');
+console.log('Pathos V2: Content script loaded!');
