@@ -1,85 +1,97 @@
 #!/bin/bash
 
-echo "📦 Packaging Pathos V2 Extension"
+# Pathos V2 Extension Packager
+# This script creates a distributable zip file of the extension
+
+echo "📦 Pathos V2 Extension Packager"
 echo "================================"
-
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-print_status() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+echo ""
 
 # Check if we're in the right directory
 if [ ! -f "manifest.json" ]; then
-    print_error "manifest.json not found. Make sure you're in the pathos-v2 directory."
+    echo "❌ Error: manifest.json not found!"
+    echo "Please run this script from the pathos-v2 directory."
     exit 1
 fi
 
-# Check if required files exist
-required_files=(
+# Get version from manifest.json
+VERSION=$(grep '"version"' manifest.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
+echo "📋 Version: $VERSION"
+
+# Create output directory
+OUTPUT_DIR="../dist"
+mkdir -p "$OUTPUT_DIR"
+
+# Create zip filename
+ZIP_NAME="pathos-v2-extension-v${VERSION}.zip"
+ZIP_PATH="$OUTPUT_DIR/$ZIP_NAME"
+
+echo "📁 Creating package: $ZIP_PATH"
+echo ""
+
+# List files to be included
+echo "📋 Files to be included:"
+FILES=(
     "manifest.json"
+    "background.js"
     "content.js"
     "popup.html"
     "popup.js"
-    "background.js"
-    "libs/tensorflow.min.js"
-    "libs/face-api.min.js"
-    "models/tiny_face_detector_model-weights_manifest.json"
-    "models/face_landmark_68_model-weights_manifest.json"
-    "models/face_expression_model-weights_manifest.json"
+    "README.md"
+    "install.sh"
+    "test.html"
+    "libs/"
+    "models/"
 )
 
-print_status "Checking required files..."
-for file in "${required_files[@]}"; do
-    if [ ! -f "$file" ]; then
-        print_error "Missing required file: $file"
-        print_warning "Run ./download-assets.sh first to download the required libraries and models."
-        exit 1
+for file in "${FILES[@]}"; do
+    if [ -e "$file" ]; then
+        echo "✅ $file"
+    else
+        echo "❌ $file (missing)"
     fi
 done
 
-print_status "All required files found!"
+echo ""
 
-# Create distribution directory
-print_status "Creating distribution package..."
-mkdir -p ../dist
+# Create the zip file
+echo "🗜️  Creating zip file..."
+if command -v zip >/dev/null 2>&1; then
+    # Use zip command
+    zip -r "$ZIP_PATH" "${FILES[@]}" -x "*.DS_Store" "*.git*" "node_modules/*"
+    echo "✅ Zip file created successfully!"
+elif command -v 7z >/dev/null 2>&1; then
+    # Use 7zip command
+    7z a "$ZIP_PATH" "${FILES[@]}" -xr!*.DS_Store -xr!*.git* -xr!node_modules/*
+    echo "✅ 7z file created successfully!"
+else
+    echo "❌ Error: Neither 'zip' nor '7z' command found!"
+    echo "Please install zip or 7zip to create the package."
+    exit 1
+fi
 
-# Copy all files to dist directory
-cp -r * ../dist/
+# Check if zip was created successfully
+if [ -f "$ZIP_PATH" ]; then
+    SIZE=$(du -h "$ZIP_PATH" | cut -f1)
+    echo ""
+    echo "📊 Package Information:"
+    echo "   File: $ZIP_NAME"
+    echo "   Size: $SIZE"
+    echo "   Location: $ZIP_PATH"
+    echo ""
+    echo "🎉 Package created successfully!"
+    echo ""
+    echo "📋 Distribution Instructions:"
+    echo "1. Share the zip file with users"
+    echo "2. Users extract the zip file"
+    echo "3. Run install.sh or follow manual installation"
+    echo "4. Load as unpacked extension in Chrome"
+    echo ""
+    echo "💡 Quick test:"
+    echo "   unzip -l $ZIP_PATH"
+else
+    echo "❌ Error: Failed to create package!"
+    exit 1
+fi
 
-# Create zip file
-cd ../dist
-zip -r ../pathos-v2-extension.zip . -x "*.DS_Store" "*.git*" "*.zip" "download-assets.sh" "package.sh"
-
-# Clean up
-cd ..
-rm -rf dist
-
-print_status "Extension packaged successfully: pathos-v2-extension.zip"
-print_status ""
-print_status "🎉 Pathos V2 is ready for distribution!"
-print_status ""
-print_status "To install in Chrome:"
-print_status "1. Open Chrome and go to chrome://extensions/"
-print_status "2. Enable 'Developer mode'"
-print_status "3. Click 'Load unpacked'"
-print_status "4. Select the pathos-v2 folder"
-print_status ""
-print_status "To distribute:"
-print_status "1. Upload pathos-v2-extension.zip to GitHub Releases"
-print_status "2. Share the download link with users"
-print_status "3. Users can install by dragging the zip file to chrome://extensions/"
-print_status ""
-print_warning "Remember: This version is 100% client-side - no backend required!"
+echo "✨ Packaging complete!"
