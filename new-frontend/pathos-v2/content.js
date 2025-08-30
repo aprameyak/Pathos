@@ -112,10 +112,14 @@ class SimpleEmotionDetector {
       const videoCtx = canvas.getContext('2d');
       videoCtx.drawImage(this.video, 0, 0);
       
+      console.log('Pathos V2: Captured frame size:', canvas.width, 'x', canvas.height);
+      
       // Convert to base64
       const frameData = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('Pathos V2: Frame data length:', frameData.length);
       
       // Send to backend
+      console.log('Pathos V2: Sending frame to backend...');
       const response = await fetch(`${BACKEND_URL}/analyze_screen`, {
         method: 'POST',
         headers: {
@@ -124,9 +128,16 @@ class SimpleEmotionDetector {
         body: JSON.stringify({ frame: frameData })
       });
       
+      console.log('Pathos V2: Backend response status:', response.status);
+      
       if (response.ok) {
         const results = await response.json();
+        console.log('Pathos V2: Backend results:', results);
         this.drawResults(results);
+      } else {
+        console.error('Pathos V2: Backend error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Pathos V2: Error details:', errorText);
       }
       
     } catch (error) {
@@ -138,10 +149,15 @@ class SimpleEmotionDetector {
   }
 
   drawResults(results) {
-    if (!Array.isArray(results) || results.length === 0) return;
+    console.log('Pathos V2: Drawing results:', results);
+    if (!Array.isArray(results) || results.length === 0) {
+      console.log('Pathos V2: No results to draw');
+      return;
+    }
     
     results.forEach(result => {
       const { dominant_emotion, emotion_scores, region } = result;
+      console.log('Pathos V2: Drawing emotion:', dominant_emotion, 'with region:', region);
       
       // Scale region to screen coordinates
       const scaleX = window.innerWidth / this.video.videoWidth;
