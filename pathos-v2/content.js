@@ -1,24 +1,49 @@
 // Pathos V2 - Client-Side Emotion Recognition
 // No backend required - everything runs in the browser!
 
+// Global state
+let emotionDetector = null;
+let librariesLoaded = false;
+
 // Dynamically load required libraries
 async function loadLibraries() {
+  if (librariesLoaded) return;
+  
   return new Promise((resolve, reject) => {
+    console.log('Pathos V2: Loading libraries...');
+    
+    // Check if libraries are already loaded
+    if (typeof tf !== 'undefined' && typeof faceapi !== 'undefined') {
+      console.log('Pathos V2: Libraries already loaded');
+      librariesLoaded = true;
+      resolve();
+      return;
+    }
+    
     // Load TensorFlow.js
     const tfScript = document.createElement('script');
     tfScript.src = chrome.runtime.getURL('libs/tensorflow.min.js');
     tfScript.onload = () => {
+      console.log('Pathos V2: TensorFlow.js loaded');
+      
       // Load face-api.js after TensorFlow.js
       const faceApiScript = document.createElement('script');
       faceApiScript.src = chrome.runtime.getURL('libs/face-api.min.js');
       faceApiScript.onload = () => {
-        console.log('Pathos V2: Libraries loaded successfully');
+        console.log('Pathos V2: face-api.js loaded');
+        librariesLoaded = true;
         resolve();
       };
-      faceApiScript.onerror = reject;
+      faceApiScript.onerror = (error) => {
+        console.error('Pathos V2: Failed to load face-api.js:', error);
+        reject(error);
+      };
       document.head.appendChild(faceApiScript);
     };
-    tfScript.onerror = reject;
+    tfScript.onerror = (error) => {
+      console.error('Pathos V2: Failed to load TensorFlow.js:', error);
+      reject(error);
+    };
     document.head.appendChild(tfScript);
   });
 }
@@ -33,6 +58,7 @@ class PathosEmotionDetector {
     this.animationFrame = null;
     this.modelsLoaded = false;
     this.initialized = false;
+    this.initPromise = null;
     
     // Emotion colors
     this.emotionColors = {
@@ -49,30 +75,38 @@ class PathosEmotionDetector {
   }
 
   async init() {
-    try {
-      console.log('Pathos V2: Initializing...');
-      
-      // Load libraries first
-      await loadLibraries();
-      
-      // Wait for face-api to be available
-      if (typeof faceapi === 'undefined') {
-        console.log('Pathos V2: Waiting for face-api.js to load...');
-        await this.waitForFaceAPI();
+    if (this.initPromise) return this.initPromise;
+    
+    this.initPromise = new Promise(async (resolve, reject) => {
+      try {
+        console.log('Pathos V2: Initializing...');
+        
+        // Load libraries first
+        await loadLibraries();
+        
+        // Wait for face-api to be available
+        if (typeof faceapi === 'undefined') {
+          console.log('Pathos V2: Waiting for face-api.js to load...');
+          await this.waitForFaceAPI();
+        }
+        
+        // Load face-api.js models
+        await this.loadModels();
+        
+        // Create canvas overlay
+        this.createCanvas();
+        
+        this.initialized = true;
+        console.log('Pathos V2: Initialized successfully!');
+        resolve();
+      } catch (error) {
+        console.error('Pathos V2: Initialization error:', error);
+        this.initialized = false;
+        reject(error);
       }
-      
-      // Load face-api.js models
-      await this.loadModels();
-      
-      // Create canvas overlay
-      this.createCanvas();
-      
-      this.initialized = true;
-      console.log('Pathos V2: Initialized successfully!');
-    } catch (error) {
-      console.error('Pathos V2: Initialization error:', error);
-      this.initialized = false;
-    }
+    });
+    
+    return this.initPromise;
   }
 
   async waitForFaceAPI() {
@@ -92,11 +126,14 @@ class PathosEmotionDetector {
     try {
       console.log('Pathos V2: Loading face-api.js models...');
       
+      const modelPath = chrome.runtime.getURL('models');
+      console.log('Pathos V2: Model path:', modelPath);
+      
       // Load face detection and landmark models
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(chrome.runtime.getURL('models')),
-        faceapi.nets.faceLandmark68Net.loadFromUri(chrome.runtime.getURL('models')),
-        faceapi.nets.faceExpressionNet.loadFromUri(chrome.runtime.getURL('models'))
+        faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+        faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+        faceapi.nets.faceExpressionNet.loadFromUri(modelPath)
       ]);
       
       this.modelsLoaded = true;
@@ -108,6 +145,12 @@ class PathosEmotionDetector {
   }
 
   createCanvas() {
+    // Remove existing canvas if any
+    const existingCanvas = document.getElementById('pathos-overlay');
+    if (existingCanvas) {
+      existingCanvas.remove();
+    }
+    
     // Create canvas overlay
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'pathos-overlay';
@@ -126,11 +169,17 @@ class PathosEmotionDetector {
   }
 
   async startDetection() {
-    if (this.isRunning) return;
+    if (this.isRunning) {
+      console.log('Pathos V2: Detection already running');
+      return;
+    }
+    
+    // Wait for initialization
+    await this.init();
     
     if (!this.initialized || !this.modelsLoaded) {
       console.log('Pathos V2: Still initializing, please wait...');
-      return;
+      throw new Error('Not initialized');
     }
     
     try {
@@ -165,6 +214,7 @@ class PathosEmotionDetector {
       
       // Handle stream end
       this.stream.getVideoTracks()[0].onended = () => {
+        console.log('Pathos V2: Stream ended');
         this.stopDetection();
       };
       
@@ -173,6 +223,7 @@ class PathosEmotionDetector {
     } catch (error) {
       console.error('Pathos V2: Start detection error:', error);
       this.stopDetection();
+      throw error;
     }
   }
 
@@ -279,8 +330,6 @@ class PathosEmotionDetector {
 }
 
 // Initialize detector when content script loads
-let emotionDetector = null;
-
 console.log('Pathos V2: Content script loaded!');
 
 // Listen for messages from popup
@@ -291,8 +340,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!emotionDetector) {
       emotionDetector = new PathosEmotionDetector();
     }
-    emotionDetector.startDetection();
-    sendResponse({ success: true });
+    
+    emotionDetector.startDetection()
+      .then(() => {
+        sendResponse({ success: true });
+      })
+      .catch((error) => {
+        console.error('Pathos V2: Start detection failed:', error);
+        sendResponse({ success: false, error: error.message });
+      });
   } else if (request.action === 'stopDetection') {
     if (emotionDetector) {
       emotionDetector.stopDetection();
