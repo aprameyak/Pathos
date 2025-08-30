@@ -78,7 +78,8 @@ async function captureScreenshot(tabId) {
   try {
     console.log('Pathos V2: Capturing screenshot for tab:', tabId);
     
-    const dataUrl = await chrome.tabs.captureVisibleTab(tabId, { 
+    // Use null for windowId to capture the current window
+    const dataUrl = await chrome.tabs.captureVisibleTab(null, { 
       format: 'jpeg', 
       quality: 80 
     });

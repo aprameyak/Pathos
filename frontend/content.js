@@ -17,6 +17,7 @@ class ScreenshotEmotionDetector {
     this.retryCount = 0;
     this.maxRetries = 3;
     this.requestTimeout = 15000; // 15 seconds timeout
+    this.currentTabId = null; // Store tab ID from popup
     
     // Emotion colors
     this.emotionColors = {
@@ -55,11 +56,12 @@ class ScreenshotEmotionDetector {
     document.body.appendChild(this.overlay);
   }
 
-  async startDetection() {
+  async startDetection(tabId) {
     try {
       console.log('Pathos V2: Starting screenshot-based emotion detection...');
       
       this.isRunning = true;
+      this.currentTabId = tabId; // Store the tab ID
       this.retryCount = 0;
       this.showStatusMessage('Starting detection...', 'info');
       this.processScreenshots();
@@ -134,11 +136,10 @@ class ScreenshotEmotionDetector {
       // Create new abort controller
       this.requestController = new AbortController();
       
-      // Get current tab ID and request screenshot from background script
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab) {
-        console.error('Pathos V2: No active tab found');
-        this.showStatusMessage('No active tab found', 'error');
+      // Check if we have a tab ID
+      if (!this.currentTabId) {
+        console.error('Pathos V2: No tab ID available');
+        this.showStatusMessage('No tab ID available', 'error');
         this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
         return;
       }
@@ -146,7 +147,7 @@ class ScreenshotEmotionDetector {
       // Request screenshot from background script
       const screenshotResponse = await chrome.runtime.sendMessage({ 
         action: 'captureScreenshot',
-        tabId: tab.id
+        tabId: this.currentTabId
       });
       
       if (!screenshotResponse || !screenshotResponse.success) {
@@ -348,6 +349,7 @@ class ScreenshotEmotionDetector {
     console.log('Pathos V2: Stopping screenshot detection...');
     
     this.isRunning = false;
+    this.currentTabId = null;
     
     // Cancel any ongoing request
     if (this.requestController) {
@@ -401,7 +403,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'ping') {
     sendResponse({ success: true, timestamp: Date.now() });
   } else if (request.action === 'startDetection') {
-    emotionDetector.startDetection()
+    emotionDetector.startDetection(request.tabId)
       .then(() => {
         sendResponse({ success: true });
       })

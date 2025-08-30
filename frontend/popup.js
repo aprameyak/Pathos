@@ -219,8 +219,11 @@ class PathosPopup {
         }
       }
 
-      // Send start message to content script
-      const response = await chrome.tabs.sendMessage(this.currentTab.id, { action: 'startDetection' });
+      // Send start message to content script with tab ID
+      const response = await chrome.tabs.sendMessage(this.currentTab.id, { 
+        action: 'startDetection',
+        tabId: this.currentTab.id
+      });
       
       if (response && response.success) {
         this.updateUI('running', 'Detection Active');
