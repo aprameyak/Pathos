@@ -16,16 +16,18 @@ class SimpleEmotionDetector {
     this.canvas = null;
     this.ctx = null;
     this.animationFrame = null;
+    this.lastProcessTime = 0;
+    this.lastResults = null;
     
-    // Emotion colors
+    // Enhanced emotion colors with better contrast
     this.emotionColors = {
-      happy: '#4CAF50',
-      sad: '#2196F3', 
-      angry: '#F44336',
-      fear: '#9C27B0',
-      surprise: '#FFC107',
-      disgust: '#795548',
-      neutral: '#9E9E9E'
+      happy: '#00FF88',
+      sad: '#0088FF', 
+      angry: '#FF4444',
+      fear: '#AA44FF',
+      surprise: '#FFAA00',
+      disgust: '#8B4513',
+      neutral: '#CCCCCC'
     };
     
     this.createCanvas();
@@ -105,6 +107,19 @@ class SimpleEmotionDetector {
       // Clear canvas
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       
+      // Always display last results if available
+      if (this.lastResults) {
+        this.drawResults(this.lastResults);
+      }
+      
+      // Throttle processing to avoid overwhelming the backend
+      const now = Date.now();
+      if (now - this.lastProcessTime < 1000) { // Process every 1 second
+        this.animationFrame = requestAnimationFrame(() => this.processFrame());
+        return;
+      }
+      this.lastProcessTime = now;
+      
       // Capture frame from video
       const canvas = document.createElement('canvas');
       canvas.width = this.video.videoWidth;
@@ -155,6 +170,9 @@ class SimpleEmotionDetector {
       return;
     }
     
+    // Store results for continuous display
+    this.lastResults = results;
+    
     results.forEach(result => {
       const { dominant_emotion, emotion_scores, region } = result;
       console.log('Pathos V2: Drawing emotion:', dominant_emotion, 'with region:', region);
@@ -168,24 +186,79 @@ class SimpleEmotionDetector {
       const width = region.w * scaleX;
       const height = region.h * scaleY;
       
-      const color = this.emotionColors[dominant_emotion] || '#9E9E9E';
+      const color = this.emotionColors[dominant_emotion] || '#CCCCCC';
       
-      // Draw face box
+      // Draw enhanced face box with rounded corners
+      this.ctx.strokeStyle = color;
+      this.ctx.lineWidth = 4;
+      this.ctx.shadowBlur = 15;
+      this.ctx.shadowColor = color;
+      this.ctx.setLineDash([10, 5]);
+      this.ctx.strokeRect(x, y, width, height);
+      this.ctx.setLineDash([]);
+      
+      // Draw emotion label with background
+      const labelText = `${dominant_emotion.toUpperCase()}`;
+      this.ctx.font = 'bold 18px Arial';
+      const textMetrics = this.ctx.measureText(labelText);
+      const labelWidth = textMetrics.width + 20;
+      const labelHeight = 25;
+      
+      // Draw label background
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      this.ctx.fillRect(x, y - labelHeight - 5, labelWidth, labelHeight);
+      
+      // Draw label text
+      this.ctx.fillStyle = color;
+      this.ctx.shadowBlur = 3;
+      this.ctx.fillText(labelText, x + 10, y - 10);
+      
+      // Draw confidence bar
+      const maxConfidence = Math.max(...Object.values(emotion_scores));
+      const barWidth = width;
+      const barHeight = 6;
+      
+      // Background bar
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      this.ctx.fillRect(x, y + height + 5, barWidth, barHeight);
+      
+      // Confidence bar
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(x, y + height + 5, barWidth * (maxConfidence / 100), barHeight);
+      
+      // Draw corner indicators
+      const cornerSize = 8;
       this.ctx.strokeStyle = color;
       this.ctx.lineWidth = 3;
-      this.ctx.shadowBlur = 10;
-      this.ctx.shadowColor = color;
-      this.ctx.strokeRect(x, y, width, height);
+      this.ctx.setLineDash([]);
       
-      // Draw emotion label
-      this.ctx.font = 'bold 16px Arial';
-      this.ctx.fillStyle = color;
-      this.ctx.shadowBlur = 5;
-      this.ctx.fillText(
-        `${dominant_emotion.toUpperCase()}`,
-        x,
-        y - 10
-      );
+      // Top-left corner
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y + cornerSize);
+      this.ctx.lineTo(x, y);
+      this.ctx.lineTo(x + cornerSize, y);
+      this.ctx.stroke();
+      
+      // Top-right corner
+      this.ctx.beginPath();
+      this.ctx.moveTo(x + width - cornerSize, y);
+      this.ctx.lineTo(x + width, y);
+      this.ctx.lineTo(x + width, y + cornerSize);
+      this.ctx.stroke();
+      
+      // Bottom-left corner
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y + height - cornerSize);
+      this.ctx.lineTo(x, y + height);
+      this.ctx.lineTo(x + cornerSize, y + height);
+      this.ctx.stroke();
+      
+      // Bottom-right corner
+      this.ctx.beginPath();
+      this.ctx.moveTo(x + width - cornerSize, y + height);
+      this.ctx.lineTo(x + width, y + height);
+      this.ctx.lineTo(x + width, y + height - cornerSize);
+      this.ctx.stroke();
     });
   }
 
