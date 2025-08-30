@@ -1,1 +1,5 @@
-THIS APP IS DEPLOYED VIA CHROME WEB STORE FOR FREE
+# Pathos Extension
+
+Pathos is a Chrome extension that provides real-time emotion recognition by analyzing faces on web pages. To install, open Chrome and navigate to chrome://extensions/, enable Developer mode, click "Load unpacked" and select the frontend folder. The extension will appear in your toolbar ready to use. To use Pathos, simply navigate to any webpage with faces and click the extension icon, then click "Start Detection" and the extension will begin capturing screenshots every 3 seconds, sending them to our AI backend for analysis. You'll see color-coded emotion boxes appear around detected faces - green for happy, blue for sad, red for angry, purple for fear, yellow for surprise, brown for disgust, and gray for neutral expressions. If you encounter issues, ensure you're on a regular webpage (not chrome:// pages) and check the browser console for any error messages. The extension requires permissions for taking screenshots, running content scripts, and accessing tab information. For testing, use the included test.html page with sample faces. The backend service is hosted on Hugging Face Spaces and may occasionally be unavailable - simply wait a few minutes and try again.
+
+Version 2.0.0
