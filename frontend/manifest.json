@@ -2,7 +2,16 @@
   "manifest_version": 3,
   "name": "Pathos",
   "version": "2.0.0",
-  "description": "Real-time emotion recognition using AI - No backend required!",
+  "description": "Real-time emotion recognition using AI. Analyze facial expressions on any webpage with instant visual feedback.",
+  "author": "Pathos Team",
+  "homepage_url": "https://github.com/your-repo/pathos",
+  
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  
   "permissions": [
     "activeTab",
     "scripting",
@@ -27,6 +36,16 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Pathos - Start Emotion Detection"
-  }
+    "default_title": "Pathos - Start Emotion Detection",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  
+  "short_name": "Pathos",
+  "categories": ["productivity", "utilities"],
+  "keywords": ["emotion", "recognition", "AI", "facial", "expression", "analysis", "real-time"],
+  "lang": "en"
 }
