@@ -4,6 +4,8 @@
 // Global state
 let emotionDetector = null;
 let librariesLoaded = false;
+let globalInitialized = false;
+let globalModelsLoaded = false;
 
 // Dynamically load required libraries
 async function loadLibraries() {
@@ -97,6 +99,7 @@ class PathosEmotionDetector {
         this.createCanvas();
         
         this.initialized = true;
+        globalInitialized = true;
         console.log('Pathos V2: Initialized successfully!');
         resolve();
       } catch (error) {
@@ -332,6 +335,10 @@ class PathosEmotionDetector {
 // Initialize detector when content script loads
 console.log('Pathos V2: Content script loaded!');
 
+// Create emotion detector instance immediately
+emotionDetector = new PathosEmotionDetector();
+console.log('Pathos V2: Emotion detector created');
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Pathos V2: Received message:', request);
@@ -358,6 +365,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     sendResponse({ success: true });
   } else if (request.action === 'getStatus') {
+    console.log('Pathos V2: Sending status response:', {
+      isRunning: emotionDetector ? emotionDetector.isRunning : false,
+      modelsLoaded: emotionDetector ? emotionDetector.modelsLoaded : false,
+      initialized: emotionDetector ? emotionDetector.initialized : false
+    });
     sendResponse({ 
       isRunning: emotionDetector ? emotionDetector.isRunning : false,
       modelsLoaded: emotionDetector ? emotionDetector.modelsLoaded : false,
