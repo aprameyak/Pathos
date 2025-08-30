@@ -41,34 +41,53 @@
             padding: 15px 20px;
             text-align: center;
             font-size: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0 20px;
+            border-radius: 8px;
         }
 
         .status-indicator {
             display: inline-block;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             margin-right: 8px;
+            transition: all 0.3s ease;
         }
 
         .status-indicator.running {
             background: #4CAF50;
             animation: pulse 2s infinite;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
         }
 
         .status-indicator.stopped {
             background: #f44336;
+            box-shadow: 0 0 5px rgba(244, 67, 54, 0.3);
         }
 
         .status-indicator.loading {
             background: #ff9800;
             animation: pulse 1s infinite;
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+        }
+
+        .status-indicator.error {
+            background: #f44336;
+            animation: shake 0.5s ease-in-out;
+            box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
         }
 
         .controls {
@@ -85,32 +104,58 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
         }
 
         .btn-primary:hover {
-            background: #45a049;
+            background: linear-gradient(135deg, #45a049, #4CAF50);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
         }
 
         .btn-secondary {
-            background: #f44336;
+            background: linear-gradient(135deg, #f44336, #da190b);
             color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
         }
 
         .btn-secondary:hover {
-            background: #da190b;
+            background: linear-gradient(135deg, #da190b, #f44336);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
+        }
+
+        .btn:disabled::before {
+            display: none;
         }
 
         .info {
@@ -120,6 +165,7 @@
             border-radius: 8px;
             font-size: 12px;
             line-height: 1.4;
+            backdrop-filter: blur(5px);
         }
 
         .features {
@@ -131,11 +177,14 @@
             align-items: center;
             margin-bottom: 8px;
             font-size: 12px;
+            padding: 4px 0;
         }
 
         .feature-icon {
             margin-right: 8px;
             font-size: 14px;
+            width: 16px;
+            text-align: center;
         }
 
         .loading {
@@ -156,6 +205,13 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .version {
+            text-align: center;
+            font-size: 10px;
+            opacity: 0.6;
+            padding: 10px;
         }
     </style>
 </head>
@@ -203,6 +259,10 @@
             <span class="feature-icon">💯</span>
             <span>Completely Free Forever</span>
         </div>
+    </div>
+
+    <div class="version">
+        Version 2.0.0 - No Backend Required
     </div>
 
     <script src="popup.js"></script>
