@@ -13,6 +13,9 @@ class PathosPopup {
     // Get DOM elements
     this.statusIndicator = document.getElementById('statusIndicator');
     this.statusText = document.getElementById('statusText');
+    this.backendStatus = document.getElementById('backendStatus');
+    this.backendIndicator = document.getElementById('backendIndicator');
+    this.backendText = document.getElementById('backendText');
     this.startBtn = document.getElementById('startBtn');
     this.stopBtn = document.getElementById('stopBtn');
 
@@ -22,9 +25,11 @@ class PathosPopup {
 
     // Check initial status
     await this.updateStatus();
+    await this.checkBackendStatus();
     
     // Update status every 2 seconds
     setInterval(() => this.updateStatus(), 2000);
+    setInterval(() => this.checkBackendStatus(), 10000); // Check backend every 10 seconds
   }
 
   async updateStatus() {
@@ -80,7 +85,7 @@ class PathosPopup {
         } else if (this.initialized && this.modelsLoaded) {
           this.updateUI('stopped', 'Ready to Start');
         } else if (this.initialized) {
-          this.updateUI('loading', 'Loading Models...');
+          this.updateUI('loading', 'Connecting to Backend...');
         } else {
           this.updateUI('loading', 'Initializing...');
         }
@@ -118,6 +123,29 @@ class PathosPopup {
     ];
     
     return restrictedPrefixes.some(prefix => url.startsWith(prefix));
+  }
+
+  async checkBackendStatus() {
+    try {
+      const response = await fetch('https://aprameyak-pathos.hf.space/health', {
+        method: 'GET',
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        this.backendStatus.style.display = 'block';
+        this.backendIndicator.className = 'status-indicator backend';
+        this.backendText.textContent = 'Backend Online';
+      } else {
+        this.backendStatus.style.display = 'block';
+        this.backendIndicator.className = 'status-indicator error';
+        this.backendText.textContent = 'Backend Offline';
+      }
+    } catch (error) {
+      this.backendStatus.style.display = 'block';
+      this.backendIndicator.className = 'status-indicator error';
+      this.backendText.textContent = 'Backend Unreachable';
+    }
   }
 
   updateUI(status, text) {

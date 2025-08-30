@@ -78,6 +78,20 @@
             box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
         }
 
+        .backend-status {
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0 20px 10px;
+            border-radius: 8px;
+        }
+
+        .status-indicator.backend {
+            background: #2196F3;
+            box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+        }
+
         @keyframes pulse {
             0% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.7; transform: scale(1.1); }
@@ -218,12 +232,17 @@
 <body>
     <div class="header">
         <div class="logo">😊 Pathos V2</div>
-        <div class="subtitle">Client-Side Emotion Recognition</div>
+        <div class="subtitle">Backend-Powered Emotion Recognition</div>
     </div>
 
     <div class="status">
         <span class="status-indicator" id="statusIndicator"></span>
         <span id="statusText">Initializing...</span>
+    </div>
+    
+    <div class="backend-status" id="backendStatus" style="display: none;">
+        <span class="status-indicator backend" id="backendIndicator"></span>
+        <span id="backendText">Checking backend...</span>
     </div>
 
     <div class="controls">
@@ -239,30 +258,30 @@
         <strong>How it works:</strong><br>
         1. Click "Start Detection"<br>
         2. Select a window/screen to capture<br>
-        3. See real-time emotion analysis!
+        3. See real-time emotion analysis via Hugging Face backend!
     </div>
 
     <div class="features">
         <div class="feature">
-            <span class="feature-icon">⚡</span>
-            <span>100% Client-Side (No Backend)</span>
+            <span class="feature-icon">🤖</span>
+            <span>Powered by DeepFace AI</span>
         </div>
         <div class="feature">
-            <span class="feature-icon">🔒</span>
-            <span>Privacy-First (Data Stays Local)</span>
+            <span class="feature-icon">☁️</span>
+            <span>Hugging Face Backend</span>
         </div>
         <div class="feature">
             <span class="feature-icon">🚀</span>
-            <span>Lightning Fast Processing</span>
+            <span>High Accuracy Detection</span>
         </div>
         <div class="feature">
             <span class="feature-icon">💯</span>
-            <span>Completely Free Forever</span>
+            <span>Free Hosting</span>
         </div>
     </div>
 
     <div class="version">
-        Version 2.0.0 - No Backend Required
+        Version 2.0.0 - Backend Edition
     </div>
 
     <script src="popup.js"></script>

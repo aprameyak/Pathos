@@ -6,7 +6,7 @@ let canvas = null;
 let ctx = null;
 
 // Backend URL - replace with your Hugging Face Spaces URL
-const BACKEND_URL = 'https://huggingface.co/spaces/aprameyak/Pathos';
+const BACKEND_URL = 'https://aprameyak-pathos.hf.space';
 
 class SimpleEmotionDetector {
   constructor() {
