@@ -281,6 +281,8 @@ class PathosEmotionDetector {
 // Initialize detector when content script loads
 let emotionDetector = null;
 
+console.log('Pathos V2: Content script loaded!');
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Pathos V2: Received message:', request);
@@ -303,6 +305,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       initialized: emotionDetector ? emotionDetector.initialized : false
     });
   }
+  
+  // Always return true to indicate we will send a response asynchronously
+  return true;
 });
-
-console.log('Pathos V2: Content script loaded!');
