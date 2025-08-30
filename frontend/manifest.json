@@ -28,14 +28,5 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "Pathos - Start Emotion Detection"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "models/*",
-        "libs/*"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
