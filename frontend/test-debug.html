@@ -49,7 +49,7 @@
     </style>
 </head>
 <body>
-    <h1>🧪 Pathos Extension Debug Test</h1>
+    <h1>Pathos Extension Debug Test</h1>
     
     <div class="debug-info">
         <h3>Extension Status</h3>
@@ -112,18 +112,18 @@
                 if (typeof chrome !== 'undefined' && chrome.runtime) {
                     const response = await chrome.runtime.sendMessage({ action: 'ping' });
                     if (response && response.success) {
-                        statusDiv.textContent = '✅ Extension connected successfully';
+                        statusDiv.textContent = 'Extension connected successfully';
                         statusDiv.className = 'status success';
                     } else {
-                        statusDiv.textContent = '❌ Extension not responding';
+                        statusDiv.textContent = 'Extension not responding';
                         statusDiv.className = 'status error';
                     }
                 } else {
-                    statusDiv.textContent = '❌ Chrome extension API not available';
+                    statusDiv.textContent = 'Chrome extension API not available';
                     statusDiv.className = 'status error';
                 }
             } catch (error) {
-                statusDiv.textContent = '❌ Extension error: ' + error.message;
+                statusDiv.textContent = 'Extension error: ' + error.message;
                 statusDiv.className = 'status error';
             }
         }
@@ -138,14 +138,14 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    statusDiv.textContent = '✅ Backend online - ' + data.status;
+                    statusDiv.textContent = 'Backend online - ' + data.status;
                     statusDiv.className = 'status success';
                 } else {
-                    statusDiv.textContent = '❌ Backend error: ' + response.status;
+                    statusDiv.textContent = 'Backend error: ' + response.status;
                     statusDiv.className = 'status error';
                 }
             } catch (error) {
-                statusDiv.textContent = '❌ Backend unreachable: ' + error.message;
+                statusDiv.textContent = 'Backend unreachable: ' + error.message;
                 statusDiv.className = 'status error';
             }
         }
@@ -156,7 +156,7 @@
                 // Get current tab
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                 if (!tab) {
-                    statusDiv.textContent = '❌ No active tab found';
+                    statusDiv.textContent = 'No active tab found';
                     statusDiv.className = 'status error';
                     return;
                 }
@@ -168,14 +168,14 @@
                 });
 
                 if (response && response.success && response.dataUrl) {
-                    statusDiv.textContent = '✅ Screenshot captured successfully (' + response.dataUrl.substring(0, 50) + '...)';
+                    statusDiv.textContent = 'Screenshot captured successfully (' + response.dataUrl.substring(0, 50) + '...)';
                     statusDiv.className = 'status success';
                 } else {
-                    statusDiv.textContent = '❌ Screenshot failed: ' + (response?.error || 'Unknown error');
+                    statusDiv.textContent = 'Screenshot failed: ' + (response?.error || 'Unknown error');
                     statusDiv.className = 'status error';
                 }
             } catch (error) {
-                statusDiv.textContent = '❌ Screenshot error: ' + error.message;
+                statusDiv.textContent = 'Screenshot error: ' + error.message;
                 statusDiv.className = 'status error';
             }
         }
@@ -191,12 +191,12 @@
                 const response = await chrome.tabs.sendMessage(tab.id, { action: 'testOverlay' });
 
                 if (response && response.success) {
-                    console.log('✅ Test overlay triggered successfully');
+                    console.log('Test overlay triggered successfully');
                 } else {
-                    console.error('❌ Failed to test overlay');
+                    console.error('Failed to test overlay');
                 }
             } catch (error) {
-                console.error('❌ Test overlay error:', error);
+                console.error('Test overlay error:', error);
             }
         }
 
@@ -214,12 +214,12 @@
                 });
 
                 if (response && response.success) {
-                    console.log('✅ Detection started successfully');
+                    console.log('Detection started successfully');
                 } else {
-                    console.error('❌ Failed to start detection:', response?.error);
+                    console.error('Failed to start detection:', response?.error);
                 }
             } catch (error) {
-                console.error('❌ Start detection error:', error);
+                console.error('Start detection error:', error);
             }
         }
 
@@ -234,12 +234,12 @@
                 const response = await chrome.tabs.sendMessage(tab.id, { action: 'stopDetection' });
 
                 if (response && response.success) {
-                    console.log('✅ Detection stopped successfully');
+                    console.log('Detection stopped successfully');
                 } else {
-                    console.error('❌ Failed to stop detection');
+                    console.error('Failed to stop detection');
                 }
             } catch (error) {
-                console.error('❌ Stop detection error:', error);
+                console.error('Stop detection error:', error);
             }
         }
 

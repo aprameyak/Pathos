@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Pathos V2 - Emotion Recognition",
+  "name": "Pathos",
   "version": "2.0.0",
-  "description": "Real-time emotion recognition using client-side AI - No backend required!",
+  "description": "Real-time emotion recognition using AI - No backend required!",
   "permissions": [
     "activeTab",
     "scripting",
@@ -27,7 +27,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Pathos V2 - Start Emotion Detection"
+    "default_title": "Pathos - Start Emotion Detection"
   },
   "web_accessible_resources": [
     {
