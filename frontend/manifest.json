@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Pathos",
+  "version": "2.0.0",
+  "description": "Real-time emotion recognition using AI - No backend required!",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Pathos - Start Emotion Detection"
+  }
+}

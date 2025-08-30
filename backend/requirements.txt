@@ -1,0 +1,18 @@
+# Core Flask and API dependencies
+Flask==2.3.3
+Flask-CORS==4.0.0
+gunicorn==21.2.0
+
+# DeepFace and computer vision
+deepface==0.0.79
+opencv-python-headless==4.8.1.78
+Pillow==10.0.0
+
+# Machine learning and numerical computing
+tensorflow==2.13.0
+numpy==1.24.3
+scipy==1.11.1
+
+# Additional dependencies for better performance
+requests==2.31.0
+urllib3==2.0.4
