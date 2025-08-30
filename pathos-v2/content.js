@@ -336,7 +336,10 @@ console.log('Pathos V2: Content script loaded!');
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Pathos V2: Received message:', request);
   
-  if (request.action === 'startDetection') {
+  if (request.action === 'ping') {
+    // Simple ping to check if content script is running
+    sendResponse({ success: true, timestamp: Date.now() });
+  } else if (request.action === 'startDetection') {
     if (!emotionDetector) {
       emotionDetector = new PathosEmotionDetector();
     }

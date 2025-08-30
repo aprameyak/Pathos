@@ -44,8 +44,31 @@ class PathosPopup {
         return;
       }
 
-      // Send message to content script
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getStatus' });
+      // Try to send message to content script
+      let response;
+      try {
+        response = await chrome.tabs.sendMessage(tab.id, { action: 'getStatus' });
+      } catch (error) {
+        // If content script is not running, try to inject it
+        if (error.message.includes('Receiving end does not exist')) {
+          console.log('Content script not found, attempting to inject...');
+          await this.injectContentScript(tab.id);
+          
+          // Wait a moment for injection to complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Try again
+          try {
+            response = await chrome.tabs.sendMessage(tab.id, { action: 'getStatus' });
+          } catch (retryError) {
+            console.error('Failed to inject content script:', retryError);
+            this.updateUI('error', 'Navigate to a web page');
+            return;
+          }
+        } else {
+          throw error;
+        }
+      }
       
       if (response) {
         this.isRunning = response.isRunning;
@@ -66,12 +89,21 @@ class PathosPopup {
       }
     } catch (error) {
       console.error('Status update error:', error);
-      // Check if it's a connection error (content script not running)
-      if (error.message.includes('Receiving end does not exist')) {
-        this.updateUI('error', 'Navigate to a web page');
-      } else {
-        this.updateUI('error', 'Extension not ready');
-      }
+      this.updateUI('error', 'Extension not ready');
+    }
+  }
+
+  async injectContentScript(tabId) {
+    try {
+      // Inject the content script manually
+      await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ['content.js']
+      });
+      console.log('Content script injected successfully');
+    } catch (error) {
+      console.error('Failed to inject content script:', error);
+      throw error;
     }
   }
 
@@ -128,6 +160,16 @@ class PathosPopup {
       // Check if content script can run on this tab
       if (this.isRestrictedPage(this.currentTab.url)) {
         throw new Error('Not available on this page');
+      }
+
+      // Ensure content script is running
+      try {
+        await chrome.tabs.sendMessage(this.currentTab.id, { action: 'ping' });
+      } catch (error) {
+        if (error.message.includes('Receiving end does not exist')) {
+          await this.injectContentScript(this.currentTab.id);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
 
       // Send start message to content script
