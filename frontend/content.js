@@ -18,6 +18,8 @@ class ScreenshotEmotionDetector {
     this.maxRetries = 3;
     this.requestTimeout = 15000; // 15 seconds timeout
     this.currentTabId = null; // Store tab ID from popup
+    this.currentRequestId = 0; // Track request sequence
+    this.pendingRequest = null; // Track current pending request
     
     // Emotion colors
     this.emotionColors = {
@@ -63,6 +65,8 @@ class ScreenshotEmotionDetector {
       this.isRunning = true;
       this.currentTabId = tabId; // Store the tab ID
       this.retryCount = 0;
+      this.currentRequestId = 0;
+      this.pendingRequest = null;
       this.showStatusMessage('Starting detection...', 'info');
       this.processScreenshots();
       
@@ -126,6 +130,13 @@ class ScreenshotEmotionDetector {
       }
       this.lastProcessTime = now;
 
+      // Don't start new request if one is pending
+      if (this.pendingRequest) {
+        console.log('Pathos V2: Skipping - previous request still pending');
+        this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
+        return;
+      }
+
       console.log('Pathos V2: Taking screenshot...');
       
       // Cancel any existing request
@@ -144,6 +155,10 @@ class ScreenshotEmotionDetector {
         return;
       }
       
+      // Generate unique request ID
+      const requestId = ++this.currentRequestId;
+      this.pendingRequest = requestId;
+      
       // Request screenshot from background script
       const screenshotResponse = await chrome.runtime.sendMessage({ 
         action: 'captureScreenshot',
@@ -153,6 +168,7 @@ class ScreenshotEmotionDetector {
       if (!screenshotResponse || !screenshotResponse.success) {
         console.error('Pathos V2: Failed to capture screenshot:', screenshotResponse?.error);
         this.showStatusMessage('Failed to capture screenshot', 'error');
+        this.pendingRequest = null;
         this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
         return;
       }
@@ -161,6 +177,7 @@ class ScreenshotEmotionDetector {
       if (!dataUrl) {
         console.error('Pathos V2: No screenshot data received');
         this.showStatusMessage('No screenshot data received', 'error');
+        this.pendingRequest = null;
         this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
         return;
       }
@@ -169,18 +186,26 @@ class ScreenshotEmotionDetector {
       this.showStatusMessage('Analyzing emotions...', 'info');
       
       // Send to backend with timeout and retry logic
-      const response = await this.sendToBackendWithRetry(dataUrl);
+      const response = await this.sendToBackendWithRetry(dataUrl, requestId);
       
-      if (response && response.ok) {
-        const results = await response.json();
-        console.log('Pathos V2: Backend results:', results);
-        this.displayResults(results);
-        this.retryCount = 0; // Reset retry count on success
-        this.showStatusMessage(`Found ${results.length} face(s)`, 'success');
+      // Only process response if it's still the current request
+      if (this.pendingRequest === requestId) {
+        if (response && response.ok) {
+          const results = await response.json();
+          console.log('Pathos V2: Backend results:', results);
+          this.displayResults(results);
+          this.retryCount = 0; // Reset retry count on success
+          this.showStatusMessage(`Found ${results.length} face(s)`, 'success');
+        } else {
+          console.error('Pathos V2: Backend error:', response?.status, response?.statusText);
+          this.showStatusMessage('Backend error - retrying...', 'error');
+        }
       } else {
-        console.error('Pathos V2: Backend error:', response?.status, response?.statusText);
-        this.showStatusMessage('Backend error - retrying...', 'error');
+        console.log('Pathos V2: Ignoring response for outdated request', requestId);
       }
+      
+      // Clear pending request
+      this.pendingRequest = null;
       
     } catch (error) {
       console.error('Pathos V2: Screenshot processing error:', error);
@@ -189,15 +214,22 @@ class ScreenshotEmotionDetector {
       } else {
         this.showStatusMessage('Processing error - retrying...', 'error');
       }
+      this.pendingRequest = null;
     }
     
     // Continue processing
     this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
   }
 
-  async sendToBackendWithRetry(dataUrl) {
+  async sendToBackendWithRetry(dataUrl, requestId) {
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
+        // Check if this request is still current
+        if (this.pendingRequest !== requestId) {
+          console.log('Pathos V2: Request outdated, aborting');
+          throw new Error('Request outdated');
+        }
+
         const response = await fetch(`${BACKEND_URL}/analyze_screen`, {
           method: 'POST',
           headers: {
@@ -213,8 +245,8 @@ class ScreenshotEmotionDetector {
       } catch (error) {
         console.error(`Pathos V2: Attempt ${attempt} failed:`, error);
         
-        if (error.name === 'AbortError') {
-          throw error; // Don't retry if aborted
+        if (error.name === 'AbortError' || error.message === 'Request outdated') {
+          throw error; // Don't retry if aborted or outdated
         }
         
         if (attempt === this.maxRetries) {
@@ -237,6 +269,8 @@ class ScreenshotEmotionDetector {
       console.log('Pathos V2: No emotions detected');
       return;
     }
+    
+    console.log('Pathos V2: Creating overlay for', results.length, 'faces');
     
     // Create emotion cards
     results.forEach((result, index) => {
@@ -277,6 +311,7 @@ class ScreenshotEmotionDetector {
         white-space: nowrap;
         border: 2px solid ${color};
         backdrop-filter: blur(5px);
+        z-index: 1000001;
       `;
       label.textContent = `${dominant_emotion.toUpperCase()} (${Math.round(confidence)}%)`;
       
@@ -291,6 +326,7 @@ class ScreenshotEmotionDetector {
         background: rgba(0, 0, 0, 0.5);
         border-radius: 3px;
         overflow: hidden;
+        z-index: 1000001;
       `;
       
       const confidenceFill = document.createElement('div');
@@ -305,44 +341,15 @@ class ScreenshotEmotionDetector {
       card.appendChild(label);
       card.appendChild(confidenceBar);
       this.overlay.appendChild(card);
+      
+      console.log('Pathos V2: Added emotion card for', dominant_emotion, 'at position', region.x, region.y);
     });
     
-    // Add summary info
-    const summary = document.createElement('div');
-    summary.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      padding: 15px;
-      border-radius: 10px;
-      font-size: 14px;
-      z-index: 1000001;
-      border: 2px solid #00FF88;
-      backdrop-filter: blur(10px);
-      animation: pathosSlideIn 0.3s ease-out;
-    `;
+    // Ensure overlay is visible
+    this.overlay.style.display = 'block';
+    this.overlay.style.opacity = '1';
     
-    const emotionCounts = {};
-    results.forEach(result => {
-      const emotion = result.dominant_emotion;
-      emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
-    });
-    
-    summary.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 10px;">😊 Emotions Detected</div>
-      ${Object.entries(emotionCounts).map(([emotion, count]) => 
-        `<div style="color: ${this.emotionColors[emotion]}; margin: 2px 0;">
-          ${emotion.toUpperCase()}: ${count}
-        </div>`
-      ).join('')}
-      <div style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
-        Total: ${results.length} face(s)
-      </div>
-    `;
-    
-    this.overlay.appendChild(summary);
+    console.log('Pathos V2: Overlay display complete with', results.length, 'emotion boxes');
   }
 
   stopDetection() {
@@ -350,6 +357,7 @@ class ScreenshotEmotionDetector {
     
     this.isRunning = false;
     this.currentTabId = null;
+    this.pendingRequest = null;
     
     // Cancel any ongoing request
     if (this.requestController) {
