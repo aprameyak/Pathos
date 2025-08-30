@@ -4,6 +4,8 @@ class PathosPopup {
   constructor() {
     this.isRunning = false;
     this.modelsLoaded = false;
+    this.initialized = false;
+    this.currentTab = null;
     this.init();
   }
 
@@ -29,6 +31,7 @@ class PathosPopup {
     try {
       // Get current tab
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      this.currentTab = tab;
       
       if (!tab) {
         this.updateUI('error', 'No active tab found');
@@ -36,7 +39,7 @@ class PathosPopup {
       }
 
       // Check if content script can run on this tab
-      if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+      if (this.isRestrictedPage(tab.url)) {
         this.updateUI('error', 'Not available on this page');
         return;
       }
@@ -72,6 +75,19 @@ class PathosPopup {
     }
   }
 
+  isRestrictedPage(url) {
+    const restrictedPrefixes = [
+      'chrome://',
+      'chrome-extension://',
+      'edge://',
+      'about:',
+      'moz-extension://',
+      'safari-extension://'
+    ];
+    
+    return restrictedPrefixes.some(prefix => url.startsWith(prefix));
+  }
+
   updateUI(status, text) {
     // Update status indicator
     this.statusIndicator.className = `status-indicator ${status}`;
@@ -105,26 +121,24 @@ class PathosPopup {
       this.startBtn.disabled = true;
       this.updateUI('loading', 'Starting...');
       
-      // Get current tab
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      if (!tab) {
+      if (!this.currentTab) {
         throw new Error('No active tab found');
       }
 
       // Check if content script can run on this tab
-      if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+      if (this.isRestrictedPage(this.currentTab.url)) {
         throw new Error('Not available on this page');
       }
 
       // Send start message to content script
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'startDetection' });
+      const response = await chrome.tabs.sendMessage(this.currentTab.id, { action: 'startDetection' });
       
       if (response && response.success) {
         this.updateUI('running', 'Detection Active');
         this.isRunning = true;
       } else {
-        throw new Error('Failed to start detection');
+        const errorMsg = response && response.error ? response.error : 'Failed to start detection';
+        throw new Error(errorMsg);
       }
     } catch (error) {
       console.error('Start detection error:', error);
@@ -133,7 +147,7 @@ class PathosPopup {
       } else if (error.message.includes('Not available on this page')) {
         this.updateUI('error', 'Not available on this page');
       } else {
-        this.updateUI('error', 'Failed to start');
+        this.updateUI('error', error.message || 'Failed to start');
       }
       this.startBtn.disabled = false;
     }
@@ -144,20 +158,17 @@ class PathosPopup {
       this.stopBtn.disabled = true;
       this.updateUI('loading', 'Stopping...');
       
-      // Get current tab
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      if (!tab) {
+      if (!this.currentTab) {
         throw new Error('No active tab found');
       }
 
       // Check if content script can run on this tab
-      if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+      if (this.isRestrictedPage(this.currentTab.url)) {
         throw new Error('Not available on this page');
       }
 
       // Send stop message to content script
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'stopDetection' });
+      const response = await chrome.tabs.sendMessage(this.currentTab.id, { action: 'stopDetection' });
       
       if (response && response.success) {
         this.updateUI('stopped', 'Ready to Start');
