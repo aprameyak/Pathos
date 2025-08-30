@@ -396,6 +396,28 @@ console.log('Pathos V2: Screenshot content script loaded!');
 
 let emotionDetector = new ScreenshotEmotionDetector();
 
+// Test overlay function
+function testOverlay() {
+  console.log('Pathos V2: Testing overlay display...');
+  
+  // Create test results
+  const testResults = [
+    {
+      dominant_emotion: 'happy',
+      emotion_scores: { happy: 85, sad: 5, angry: 3, fear: 2, surprise: 3, disgust: 1, neutral: 1 },
+      region: { x: 100, y: 100, w: 150, h: 150 }
+    },
+    {
+      dominant_emotion: 'sad',
+      emotion_scores: { happy: 10, sad: 75, angry: 5, fear: 3, surprise: 2, disgust: 2, neutral: 3 },
+      region: { x: 300, y: 200, w: 120, h: 120 }
+    }
+  ];
+  
+  emotionDetector.displayResults(testResults);
+  console.log('Pathos V2: Test overlay should be visible now');
+}
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Pathos V2: Received message:', request);
@@ -420,7 +442,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       modelsLoaded: true, // Always true for backend version
       initialized: true   // Always true for backend version
     });
+  } else if (request.action === 'testOverlay') {
+    testOverlay();
+    sendResponse({ success: true });
   }
   
   return true;
 });
+
+// Make testOverlay available globally for debugging
+window.testPathosOverlay = testOverlay;
