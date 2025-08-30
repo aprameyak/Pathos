@@ -227,12 +227,37 @@
             opacity: 0.6;
             padding: 10px;
         }
+
+        .emotion-preview {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .emotion-item {
+            text-align: center;
+            margin: 2px;
+        }
+
+        .emotion-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 auto 2px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .emotion-label {
+            font-size: 8px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="logo">Pathos</div>
-        <div class="subtitle">Emotion Recognition for Neurodivergent Users</div>
+        <div class="subtitle">Real-time Emotion Recognition</div>
     </div>
 
     <div class="status">
@@ -257,12 +282,63 @@
     <div class="info">
         <strong>How it works:</strong><br>
         1. Click "Start Detection"<br>
-        2. Select a window/screen to capture<br>
-        3. See real-time emotion detection
+        2. Extension captures screen every 3 seconds<br>
+        3. AI analyzes faces and shows emotion boxes<br>
+        4. Real-time overlay displays detected emotions
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <span class="feature-icon">🎯</span>
+            <span>Detects 7 emotions: Happy, Sad, Angry, Fear, Surprise, Disgust, Neutral</span>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">⚡</span>
+            <span>Real-time analysis every 3 seconds</span>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">🔒</span>
+            <span>Privacy-focused: No data stored</span>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">🎨</span>
+            <span>Color-coded emotion boxes with confidence scores</span>
+        </div>
+    </div>
+
+    <div class="emotion-preview">
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #00FF88;"></div>
+            <div class="emotion-label">Happy</div>
+        </div>
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #0088FF;"></div>
+            <div class="emotion-label">Sad</div>
+        </div>
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #FF4444;"></div>
+            <div class="emotion-label">Angry</div>
+        </div>
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #AA44FF;"></div>
+            <div class="emotion-label">Fear</div>
+        </div>
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #FFAA00;"></div>
+            <div class="emotion-label">Surprise</div>
+        </div>
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #8B4513;"></div>
+            <div class="emotion-label">Disgust</div>
+        </div>
+        <div class="emotion-item">
+            <div class="emotion-color" style="background: #CCCCCC;"></div>
+            <div class="emotion-label">Neutral</div>
+        </div>
     </div>
 
     <div class="version">
-        Version 2.0.0 - Backend Edition
+        Version 2.0.0 - Enhanced Edition
     </div>
 
     <script src="popup.js"></script>

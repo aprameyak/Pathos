@@ -6,6 +6,7 @@ class PathosPopup {
     this.modelsLoaded = false;
     this.initialized = false;
     this.currentTab = null;
+    this.backendOnline = false;
     this.init();
   }
 
@@ -83,7 +84,11 @@ class PathosPopup {
         if (this.isRunning) {
           this.updateUI('running', 'Detection Active');
         } else if (this.initialized && this.modelsLoaded) {
-          this.updateUI('stopped', 'Ready to Start');
+          if (this.backendOnline) {
+            this.updateUI('stopped', 'Ready to Start');
+          } else {
+            this.updateUI('error', 'Backend Offline');
+          }
         } else if (this.initialized) {
           this.updateUI('loading', 'Connecting to Backend...');
         } else {
@@ -127,21 +132,30 @@ class PathosPopup {
 
   async checkBackendStatus() {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch('https://aprameyak-pathos.hf.space/health', {
         method: 'GET',
-        mode: 'cors'
+        mode: 'cors',
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
+        this.backendOnline = true;
         this.backendStatus.style.display = 'block';
         this.backendIndicator.className = 'status-indicator backend';
         this.backendText.textContent = 'Backend Online';
       } else {
+        this.backendOnline = false;
         this.backendStatus.style.display = 'block';
         this.backendIndicator.className = 'status-indicator error';
         this.backendText.textContent = 'Backend Offline';
       }
     } catch (error) {
+      this.backendOnline = false;
       this.backendStatus.style.display = 'block';
       this.backendIndicator.className = 'status-indicator error';
       this.backendText.textContent = 'Backend Unreachable';
@@ -162,7 +176,7 @@ class PathosPopup {
         this.stopBtn.disabled = false;
         break;
       case 'stopped':
-        this.startBtn.disabled = false;
+        this.startBtn.disabled = !this.backendOnline;
         this.stopBtn.disabled = true;
         break;
       case 'loading':
@@ -188,6 +202,11 @@ class PathosPopup {
       // Check if content script can run on this tab
       if (this.isRestrictedPage(this.currentTab.url)) {
         throw new Error('Not available on this page');
+      }
+
+      // Check if backend is online
+      if (!this.backendOnline) {
+        throw new Error('Backend is offline. Please try again later.');
       }
 
       // Ensure content script is running
@@ -216,6 +235,8 @@ class PathosPopup {
         this.updateUI('error', 'Navigate to a web page');
       } else if (error.message.includes('Not available on this page')) {
         this.updateUI('error', 'Not available on this page');
+      } else if (error.message.includes('Backend is offline')) {
+        this.updateUI('error', 'Backend is offline');
       } else {
         this.updateUI('error', error.message || 'Failed to start');
       }

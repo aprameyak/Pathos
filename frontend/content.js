@@ -13,6 +13,10 @@ class ScreenshotEmotionDetector {
     this.lastProcessTime = 0;
     this.lastResults = null;
     this.overlay = null;
+    this.requestController = null; // For cancelling requests
+    this.retryCount = 0;
+    this.maxRetries = 3;
+    this.requestTimeout = 15000; // 15 seconds timeout
     
     // Emotion colors
     this.emotionColors = {
@@ -56,6 +60,8 @@ class ScreenshotEmotionDetector {
       console.log('Pathos V2: Starting screenshot-based emotion detection...');
       
       this.isRunning = true;
+      this.retryCount = 0;
+      this.showStatusMessage('Starting detection...', 'info');
       this.processScreenshots();
       
       console.log('Pathos V2: Screenshot detection started!');
@@ -65,6 +71,45 @@ class ScreenshotEmotionDetector {
       this.stopDetection();
       throw error;
     }
+  }
+
+  showStatusMessage(message, type = 'info') {
+    // Remove existing status message
+    const existingStatus = document.getElementById('pathos-status-message');
+    if (existingStatus) {
+      existingStatus.remove();
+    }
+
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'pathos-status-message';
+    statusDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${type === 'error' ? 'rgba(255, 68, 68, 0.9)' : 
+                   type === 'success' ? 'rgba(0, 255, 136, 0.9)' : 
+                   'rgba(0, 0, 0, 0.9)'};
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 1000002;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    `;
+    statusDiv.textContent = message;
+    
+    this.overlay.appendChild(statusDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      if (statusDiv.parentNode) {
+        statusDiv.style.opacity = '0';
+        setTimeout(() => statusDiv.remove(), 300);
+      }
+    }, 3000);
   }
 
   async processScreenshots() {
@@ -81,46 +126,104 @@ class ScreenshotEmotionDetector {
 
       console.log('Pathos V2: Taking screenshot...');
       
-      // Take screenshot using chrome.tabs.captureVisibleTab
-      const dataUrl = await new Promise((resolve) => {
-        chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 80 }, resolve);
+      // Cancel any existing request
+      if (this.requestController) {
+        this.requestController.abort();
+      }
+      
+      // Create new abort controller
+      this.requestController = new AbortController();
+      
+      // Get current tab ID and request screenshot from background script
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) {
+        console.error('Pathos V2: No active tab found');
+        this.showStatusMessage('No active tab found', 'error');
+        this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
+        return;
+      }
+      
+      // Request screenshot from background script
+      const screenshotResponse = await chrome.runtime.sendMessage({ 
+        action: 'captureScreenshot',
+        tabId: tab.id
       });
       
+      if (!screenshotResponse || !screenshotResponse.success) {
+        console.error('Pathos V2: Failed to capture screenshot:', screenshotResponse?.error);
+        this.showStatusMessage('Failed to capture screenshot', 'error');
+        this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
+        return;
+      }
+      
+      const dataUrl = screenshotResponse.dataUrl;
       if (!dataUrl) {
-        console.error('Pathos V2: Failed to capture screenshot');
+        console.error('Pathos V2: No screenshot data received');
+        this.showStatusMessage('No screenshot data received', 'error');
         this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
         return;
       }
 
       console.log('Pathos V2: Screenshot captured, sending to backend...');
+      this.showStatusMessage('Analyzing emotions...', 'info');
       
-      // Send to backend
-      const response = await fetch(`${BACKEND_URL}/analyze_screen`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ frame: dataUrl })
-      });
+      // Send to backend with timeout and retry logic
+      const response = await this.sendToBackendWithRetry(dataUrl);
       
-      console.log('Pathos V2: Backend response status:', response.status);
-      
-      if (response.ok) {
+      if (response && response.ok) {
         const results = await response.json();
         console.log('Pathos V2: Backend results:', results);
         this.displayResults(results);
+        this.retryCount = 0; // Reset retry count on success
+        this.showStatusMessage(`Found ${results.length} face(s)`, 'success');
       } else {
-        console.error('Pathos V2: Backend error:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('Pathos V2: Error details:', errorText);
+        console.error('Pathos V2: Backend error:', response?.status, response?.statusText);
+        this.showStatusMessage('Backend error - retrying...', 'error');
       }
       
     } catch (error) {
       console.error('Pathos V2: Screenshot processing error:', error);
+      if (error.name === 'AbortError') {
+        console.log('Pathos V2: Request was cancelled');
+      } else {
+        this.showStatusMessage('Processing error - retrying...', 'error');
+      }
     }
     
     // Continue processing
     this.animationFrame = requestAnimationFrame(() => this.processScreenshots());
+  }
+
+  async sendToBackendWithRetry(dataUrl) {
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${BACKEND_URL}/analyze_screen`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ frame: dataUrl }),
+          signal: this.requestController.signal,
+          // Add timeout
+          timeout: this.requestTimeout
+        });
+        
+        return response;
+      } catch (error) {
+        console.error(`Pathos V2: Attempt ${attempt} failed:`, error);
+        
+        if (error.name === 'AbortError') {
+          throw error; // Don't retry if aborted
+        }
+        
+        if (attempt === this.maxRetries) {
+          throw error; // Give up after max retries
+        }
+        
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
   }
 
   displayResults(results) {
@@ -155,6 +258,7 @@ class ScreenshotEmotionDetector {
         pointer-events: none;
         z-index: 1000000;
         box-shadow: 0 0 20px ${color}40;
+        animation: pathosFadeIn 0.3s ease-in;
       `;
       
       // Create emotion label
@@ -171,6 +275,7 @@ class ScreenshotEmotionDetector {
         font-weight: bold;
         white-space: nowrap;
         border: 2px solid ${color};
+        backdrop-filter: blur(5px);
       `;
       label.textContent = `${dominant_emotion.toUpperCase()} (${Math.round(confidence)}%)`;
       
@@ -214,6 +319,8 @@ class ScreenshotEmotionDetector {
       font-size: 14px;
       z-index: 1000001;
       border: 2px solid #00FF88;
+      backdrop-filter: blur(10px);
+      animation: pathosSlideIn 0.3s ease-out;
     `;
     
     const emotionCounts = {};
@@ -230,7 +337,7 @@ class ScreenshotEmotionDetector {
         </div>`
       ).join('')}
       <div style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
-        Total: ${results.length} faces
+        Total: ${results.length} face(s)
       </div>
     `;
     
@@ -242,19 +349,45 @@ class ScreenshotEmotionDetector {
     
     this.isRunning = false;
     
+    // Cancel any ongoing request
+    if (this.requestController) {
+      this.requestController.abort();
+      this.requestController = null;
+    }
+    
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
     }
     
-    // Clear overlay
+    // Clear overlay with fade out animation
     if (this.overlay) {
-      this.overlay.innerHTML = '';
+      this.overlay.style.opacity = '0';
+      setTimeout(() => {
+        if (this.overlay && this.overlay.parentNode) {
+          this.overlay.remove();
+        }
+      }, 300);
     }
     
     console.log('Pathos V2: Screenshot detection stopped!');
   }
 }
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pathosFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  @keyframes pathosSlideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+`;
+document.head.appendChild(style);
 
 // Initialize detector when content script loads
 console.log('Pathos V2: Screenshot content script loaded!');

@@ -54,12 +54,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true, timestamp: Date.now() });
       break;
       
+    case 'captureScreenshot':
+      // Handle screenshot capture request from content script
+      captureScreenshot(request.tabId)
+        .then(dataUrl => {
+          sendResponse({ success: true, dataUrl: dataUrl });
+        })
+        .catch(error => {
+          console.error('Pathos V2: Screenshot capture failed:', error);
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // Keep message channel open for async response
+      
     default:
       sendResponse({ success: true });
   }
   
   return true; // Keep message channel open for async response
 });
+
+// Function to capture screenshot
+async function captureScreenshot(tabId) {
+  try {
+    console.log('Pathos V2: Capturing screenshot for tab:', tabId);
+    
+    const dataUrl = await chrome.tabs.captureVisibleTab(tabId, { 
+      format: 'jpeg', 
+      quality: 80 
+    });
+    
+    console.log('Pathos V2: Screenshot captured successfully');
+    return dataUrl;
+  } catch (error) {
+    console.error('Pathos V2: Screenshot capture error:', error);
+    throw error;
+  }
+}
 
 // Handle tab updates to inject content script if needed
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
