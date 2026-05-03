@@ -13,7 +13,7 @@ A Chrome extension that detects faces and classifies emotions in real time using
 ## Features
 
 - Real-time face detection from browser tabs  
-- Emotion classification (7 categories)  
+- Emotion classification 
 - Multiple face recognition models supported  
 - Canvas overlay for visual feedback  
 - Simple popup controls  
@@ -28,17 +28,3 @@ A Chrome extension that detects faces and classifies emotions in real time using
 3. Open a tab with visible faces  
 4. Click the extension to begin detection  
 5. View results directly on the screen  
-
----
-
-## Tech Stack
-
-- React.js  
-- JavaScript  
-- HTML / CSS  
-- Chrome Extension APIs  
-- Python  
-- Flask  
-- DeepFace  
-- OpenCV  
-- NumPy  
