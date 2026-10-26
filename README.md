@@ -116,7 +116,7 @@ Pathos/
 
 ## Contributing
 
-Pathos was built by a team at Hack NYU 2025: [@aprameyak](https://github.com/aprameyak), [@singvir23](https://github.com/singvir23), and [@bilal-ali1](https://github.com/bilal-ali1). Issues and pull requests are welcome. Please keep changes to the backend response format (`dominant_emotion`, `emotion_scores`, `region`) in sync with `frontend/content.js`.
+Issues and pull requests are welcome. Please keep changes to the backend response format (`dominant_emotion`, `emotion_scores`, `region`) in sync with `frontend/content.js`.
 
 ## License
 
