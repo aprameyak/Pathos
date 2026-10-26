@@ -2,12 +2,50 @@
 
 Pathos is a Chrome extension that screenshots the visible browser tab every few seconds, sends it to a Flask backend that runs facial emotion classification with the DeepFace library, and draws a color-coded box with the predicted emotion over each detected face. It was built at Hack NYU 2025 as a demo of real-time emotion recognition on whatever is on screen, such as a video call or a video.
 
+## Quick start
+
+The extension talks to a hosted backend on Hugging Face Spaces, so you only need to load it:
+
+1. Clone the repo: `git clone https://github.com/aprameyak/Pathos`
+2. Open `chrome://extensions/`, turn on Developer mode, click "Load unpacked", and select the `frontend/` folder.
+3. Open a normal web page with faces on it (not a `chrome://` page), click the Pathos icon, then click "Start Detection".
+
+The Start button stays disabled while the backend health check fails. If the Space is asleep, wait a minute and reopen the popup.
+
+## Usage
+
+In the browser, each detected face gets a box colored by emotion (green happy, blue sad, red angry, purple fear, orange surprise, brown disgust, gray neutral) with a label such as `HAPPY (98%)`. Click "Stop Detection" to remove the overlay.
+
+The backend can also be called directly. `/analyze_screen` takes a base64 image (a data URL prefix is optional):
+
+```bash
+curl -X POST https://aprameyak-pathos.hf.space/analyze_screen \
+  -H "Content-Type: application/json" \
+  -d "{\"frame\": \"$(base64 < face.jpg | tr -d '\n')\"}"
+```
+
+Real response for a 400x400 portrait of a smiling man, scores rounded:
+
+```json
+[
+  {
+    "dominant_emotion": "happy",
+    "emotion_scores": {
+      "angry": 0.0, "disgust": 0.0, "fear": 0.0002, "happy": 98.46,
+      "neutral": 1.25, "sad": 0.0003, "surprise": 0.29
+    },
+    "region": { "x": 85, "y": 24, "w": 207, "h": 207 }
+  }
+]
+```
+
+Scores are percentages from DeepFace and `region` is in pixels of the (possibly resized) input image. Other endpoints: `GET /health`, `GET /config`, and `GET /`.
+
 ## Features
 
-- Start and Stop buttons in the extension popup, plus a backend status indicator that polls the `/health` endpoint every 10 seconds.
+- Start and Stop buttons in the extension popup, plus a backend status indicator that polls `/health` every 10 seconds.
 - Captures the visible tab as a JPEG with `chrome.tabs.captureVisibleTab` about every 3 seconds while detection is running.
 - Classifies each face into one of seven emotions: happy, sad, angry, fear, surprise, disgust, neutral.
-- Overlays a colored box per face with the dominant emotion and its score, plus a score bar.
 - Backend limits results to 10 faces, downsizes images to a max side of 1024 px, and keeps an in-memory cache of the last 100 results.
 
 ## Tech stack
@@ -16,18 +54,9 @@ Pathos is a Chrome extension that screenshots the visible browser tab every few 
 - Extension: Chrome Manifest V3, plain JavaScript and HTML (no framework or build step)
 - Deployment: Docker image on Hugging Face Spaces (`https://aprameyak-pathos.hf.space`)
 
-## Getting started
+## Running the backend locally
 
-### Prerequisites
-
-- Google Chrome (or another Chromium browser that loads unpacked extensions)
-- To run the backend yourself: Python 3.9 or Docker. DeepFace downloads its model weights on first use, so the first request is slow and needs internet access.
-
-### Backend
-
-The backend reads two optional environment variables: `PORT` (default `7860`) and `DEBUG` (`true` to enable Flask debug mode).
-
-With Python:
+Needs Python 3.9 or Docker. DeepFace downloads its model weights on first use, so the first request is slow and needs internet access. Optional environment variables: `PORT` (default `7860`) and `DEBUG` (`true` enables Flask debug mode).
 
 ```bash
 cd backend
@@ -35,27 +64,17 @@ pip install -r requirements.txt
 python app.py
 ```
 
-With Docker:
+Or with Docker, from `backend/`:
 
 ```bash
-cd backend
-docker build -t pathos-backend .
-docker run -p 7860:7860 pathos-backend
+docker build -t pathos-backend . && docker run -p 7860:7860 pathos-backend
 ```
 
-Check it with `curl http://localhost:7860/health`.
+Check it with `curl http://localhost:7860/health`. The backend URL is hardcoded in `frontend/content.js` (`BACKEND_URL`) and `frontend/popup.js` (the `/health` check). To use your local backend, change both to `http://localhost:7860` and reload the extension.
 
-### Extension
+## Testing
 
-1. Open `chrome://extensions/` and turn on Developer mode.
-2. Click "Load unpacked" and select the `frontend/` folder.
-3. Open a normal web page with faces on it (not a `chrome://` page), click the Pathos icon, then click "Start Detection".
-
-The backend URL is hardcoded to the hosted Space `https://aprameyak-pathos.hf.space` in `frontend/content.js` (`BACKEND_URL`) and `frontend/popup.js` (the `/health` check). To use a local backend, change both to `http://localhost:7860` and reload the extension. The Start button stays disabled while the health check fails.
-
-### Testing
-
-There are no automated tests. `frontend/test.html` and `frontend/test-debug.html` are manual test pages that show sample face photos (loaded from Unsplash) to run the extension against. `content.js` also exposes `window.testPathosOverlay()` and a `testOverlay` message that draw fake results to check the overlay without the backend.
+There are no automated tests. `frontend/test.html` and `frontend/test-debug.html` are manual test pages with sample face photos (loaded from Unsplash). `content.js` also exposes `window.testPathosOverlay()`, which draws fake results to check the overlay without the backend.
 
 ## How it works
 
